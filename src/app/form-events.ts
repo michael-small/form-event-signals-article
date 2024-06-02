@@ -78,26 +78,10 @@ export function allEventsObservable<T>(form: AbstractControl<T>) {
     pristineEvents$(form).pipe(startWith(form.pristine)),
   ]).pipe(
     map(([value, status, touched, pristine]) => {
-      let stat: FormControlStatus | StatusChangeEvent;
-      if (isStatusEvent(status)) {
-        stat = status.status;
-      } else {
-        stat = status;
-      }
+      const stat: FormControlStatus | StatusChangeEvent = isStatusEvent(status) ? status.status : status;
+      const touch: boolean | TouchedChangeEvent = isTouchedEvent(touched) ? touched.touched : touched;
+      const prist: boolean | PristineChangeEvent = isPristineEvent(pristine) ? pristine.pristine : pristine;
 
-      let touch: boolean | TouchedChangeEvent;
-      if (isTouchedEvent(touched)) {
-        touch = touched.touched;
-      } else {
-        touch = touched;
-      }
-
-      let prist: boolean | PristineChangeEvent;
-      if (isPristineEvent(pristine)) {
-        prist = pristine.pristine;
-      } else {
-        prist = pristine;
-      }
       return {
         value: value,
         status: stat,

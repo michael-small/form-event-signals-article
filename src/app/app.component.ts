@@ -1,7 +1,7 @@
-import {Component, inject} from '@angular/core';
+import {Component, effect, inject} from '@angular/core';
 import {NonNullableFormBuilder, ReactiveFormsModule, Validators} from "@angular/forms";
 import {AsyncPipe, JsonPipe} from "@angular/common";
-import {allEventsObservable, allEventsSignal} from "./form-events";
+import {$formValueAndStatus, formValueAndStatus$} from "./v16-utils";
 
 @Component({
   selector: 'app-root',
@@ -20,8 +20,8 @@ import {allEventsObservable, allEventsSignal} from "./form-events";
       <button type="reset">Reset</button>
     </form>
     <div id="form-values">
-      <pre>$form (signal): {{ $form() | json }}</pre>
-      <pre>form$ (observable): {{ form$ | async | json }}</pre>
+<!--      <pre>$form (signal): {{ $form() | json }}</pre>-->
+<!--      <pre>form$ (observable): {{ form$ | async | json }}</pre>-->
     </div>
   `,
   styles: `
@@ -44,6 +44,10 @@ export class AppComponent {
     lastName: this.fb.control(''),
   });
 
-  form$ = allEventsObservable(this.form);
-  $form = allEventsSignal(this.form);
+  g = this.form.events
+
+  formValueAndStatus$ = formValueAndStatus$(this.form);
+  $formValueAndStatus = $formValueAndStatus(this.form);
+
+  eff = effect(() => console.log(this.$formValueAndStatus()));
 }
