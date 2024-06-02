@@ -2,6 +2,7 @@ import {Component, effect, inject} from '@angular/core';
 import {NonNullableFormBuilder, ReactiveFormsModule, Validators} from "@angular/forms";
 import {AsyncPipe, JsonPipe} from "@angular/common";
 import {$formValueAndStatus, formValueAndStatus$} from "./v16-utils";
+import {allEventsObservable, allEventsSignal} from "./form-events";
 
 @Component({
   selector: 'app-root',
@@ -19,9 +20,11 @@ import {$formValueAndStatus, formValueAndStatus$} from "./v16-utils";
       </span>
       <button type="reset">Reset</button>
     </form>
+
+    <p>V18 Helper Values. See the console for v16 utility equivalent being logged.</p>
     <div id="form-values">
-<!--      <pre>$form (signal): {{ $form() | json }}</pre>-->
-<!--      <pre>form$ (observable): {{ form$ | async | json }}</pre>-->
+      <pre>$form (signal): {{ $form() | json }}</pre>
+      <pre>form$ (observable): {{ form$ | async | json }}</pre>
     </div>
   `,
   styles: `
@@ -44,10 +47,14 @@ export class AppComponent {
     lastName: this.fb.control(''),
   });
 
-  g = this.form.events
+  // v18 usage - see template
+  form$ = allEventsObservable(this.form);
+  $form = allEventsSignal(this.form);
 
+  // v16 versions - see console
   formValueAndStatus$ = formValueAndStatus$(this.form);
-  $formValueAndStatus = $formValueAndStatus(this.form);
+  observableLogging = this.formValueAndStatus$.subscribe((v) => console.log('observable', v));
 
-  eff = effect(() => console.log(this.$formValueAndStatus()));
+  $formValueAndStatus = $formValueAndStatus(this.form);
+  $signalLogging = effect(() => console.log('signal', this.$formValueAndStatus()));
 }
