@@ -8,7 +8,7 @@ import {
   TouchedChangeEvent,
   ValueChangeEvent,
 } from '@angular/forms';
-import { combineLatest, filter, map, startWith } from 'rxjs';
+import {combineLatest, distinctUntilChanged, filter, map, startWith} from 'rxjs';
 
 function valueEvents$<T>(form: AbstractControl<T>) {
   return form.events.pipe(
@@ -66,7 +66,13 @@ function isTouchedEvent<T>(
 }
 export function allEventsObservable<T>(form: AbstractControl<T>) {
   return combineLatest([
-    valueEvents$(form).pipe(startWith(form.value)),
+    valueEvents$(form).pipe(
+      startWith(form.value),
+      map(value =>
+        isValueEvent(value) ? value.value : value
+      ),
+      distinctUntilChanged((previous, current) => JSON.stringify(previous) === JSON.stringify(current))
+    ),
     statusEvents$(form).pipe(startWith(form.status)),
     touchedEvents$(form).pipe(startWith(form.touched)),
     pristineEvents$(form).pipe(startWith(form.pristine)),
