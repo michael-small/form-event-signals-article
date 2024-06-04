@@ -9,6 +9,7 @@ import {
   ValueChangeEvent,
 } from '@angular/forms';
 import {combineLatest, distinctUntilChanged, filter, map, startWith} from 'rxjs';
+import {Signal} from "@angular/core";
 
 function valueEvents$<T>(form: AbstractControl<T>) {
   return form.events.pipe(
@@ -68,36 +69,71 @@ export function allEventsObservable<T>(form: AbstractControl<T>) {
   return combineLatest([
     valueEvents$(form).pipe(
       startWith(form.value),
-      map(value =>
-        isValueEvent(value) ? value.value : value
+      map((value) => (isValueEvent(value) ? value.value : value)),
+      distinctUntilChanged(
+        (previous, current) =>
+          JSON.stringify(previous) === JSON.stringify(current),
       ),
-      distinctUntilChanged((previous, current) => JSON.stringify(previous) === JSON.stringify(current))
     ),
     statusEvents$(form).pipe(startWith(form.status)),
     touchedEvents$(form).pipe(startWith(form.touched)),
     pristineEvents$(form).pipe(startWith(form.pristine)),
   ]).pipe(
     map(([value, status, touched, pristine]) => {
-      const stat: FormControlStatus | StatusChangeEvent = isStatusEvent(status) ? status.status : status;
-      const touch: boolean | TouchedChangeEvent = isTouchedEvent(touched) ? touched.touched : touched;
-      const prist: boolean | PristineChangeEvent = isPristineEvent(pristine) ? pristine.pristine : pristine;
+      // Original values (plus value)
+      const stat: FormControlStatus | StatusChangeEvent = isStatusEvent(status)
+        ? status.status
+        : status;
+      const touch: boolean | TouchedChangeEvent = isTouchedEvent(touched)
+        ? touched.touched
+        : touched;
+      const prist: boolean | PristineChangeEvent = isPristineEvent(pristine)
+        ? pristine.pristine
+        : pristine;
+
+      // Derived values - not directly named as events but are aliases for something that can be derived from original values
+      const valid = stat === 'VALID';
+      const invalid = stat === 'INVALID';
+      const pending = stat === 'PENDING';
+      const dirty = !prist;
+      const untouched = !touch;
 
       return {
         value: value,
         status: stat,
         touched: touch,
         pristine: prist,
+        valid: valid,
+        invalid: invalid,
+        pending: pending,
+        dirty: dirty,
+        untouched: untouched,
       };
     }),
   );
 }
-export function allEventsSignal<T>(form: AbstractControl<T>) {
+export function allEventsSignal<T>(form: AbstractControl<T>): Signal<{
+  value: T;
+  status: FormControlStatus;
+  touched: boolean;
+  pristine: boolean;
+  valid: boolean;
+  invalid: boolean;
+  pending: boolean;
+  dirty: boolean;
+  untouched: boolean;
+}> {
   return toSignal(allEventsObservable(form), {
     initialValue: {
       value: form.value,
       status: form.status,
       pristine: form.pristine,
       touched: form.touched,
+      valid: form.valid,
+      invalid: form.invalid,
+      pending: form.pending,
+      dirty: form.dirty,
+      untouched: form.untouched,
     },
   });
 }
