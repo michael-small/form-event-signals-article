@@ -1,3 +1,4 @@
+import { Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -8,8 +9,14 @@ import {
   TouchedChangeEvent,
   ValueChangeEvent,
 } from '@angular/forms';
-import {combineLatest, distinctUntilChanged, filter, map, startWith} from 'rxjs';
-import {Signal} from "@angular/core";
+import {
+  Observable,
+  combineLatest,
+  distinctUntilChanged,
+  filter,
+  map,
+  startWith,
+} from 'rxjs';
 
 function valueEvents$<T>(form: AbstractControl<T>) {
   return form.events.pipe(
@@ -65,7 +72,25 @@ function isTouchedEvent<T>(
 ): event is TouchedChangeEvent {
   return event instanceof TouchedChangeEvent;
 }
-export function allEventsObservable<T>(form: AbstractControl<T>) {
+
+type FormEventData<T> = {
+  // These values are possible in Angular 16, see links at the bottom
+  value: T;
+  status: FormControlStatus;
+  valid: boolean;
+  invalid: boolean;
+  pending: boolean;
+
+  // These values are possible as of Angular 18
+  touched: boolean;
+  pristine: boolean;
+  dirty: boolean;
+  untouched: boolean;
+};
+
+export function allEventsObservable<T>(
+  form: AbstractControl<T>,
+): Observable<FormEventData<T>> {
   return combineLatest([
     valueEvents$(form).pipe(
       startWith(form.value),
@@ -79,50 +104,41 @@ export function allEventsObservable<T>(form: AbstractControl<T>) {
     touchedEvents$(form).pipe(startWith(form.touched)),
     pristineEvents$(form).pipe(startWith(form.pristine)),
   ]).pipe(
-    map(([value, status, touched, pristine]) => {
+    map(([valueParam, statusParam, touchedParam, pristineParam]) => {
       // Original values (plus value)
-      const stat: FormControlStatus | StatusChangeEvent = isStatusEvent(status)
-        ? status.status
-        : status;
-      const touch: boolean | TouchedChangeEvent = isTouchedEvent(touched)
-        ? touched.touched
-        : touched;
-      const prist: boolean | PristineChangeEvent = isPristineEvent(pristine)
-        ? pristine.pristine
-        : pristine;
-
-      // Derived values - not directly named as events but are aliases for something that can be derived from original values
-      const valid = stat === 'VALID';
-      const invalid = stat === 'INVALID';
-      const pending = stat === 'PENDING';
-      const dirty = !prist;
-      const untouched = !touch;
-
+      const stat: FormControlStatus | StatusChangeEvent = isStatusEvent(statusParam)
+        ? statusParam.status
+        : statusParam;
+      const touch: boolean | TouchedChangeEvent = isTouchedEvent(touchedParam)
+        ? touchedParam.touched
+        : touchedParam;
+      const prist: boolean | PristineChangeEvent = isPristineEvent(pristineParam)
+        ? pristineParam.pristine
+        : pristineParam;
+      // Derived values - not directly named as events,
+      //     but are aliases for something that can be derived from original values
+      const validDerived = stat === 'VALID';
+      const invalidDerived = stat === 'INVALID';
+      const pendingDerived = stat === 'PENDING';
+      const dirtyDerived = !prist;
+      const untouchedDerived = !touch;
       return {
-        value: value,
+        value: valueParam,
         status: stat,
         touched: touch,
         pristine: prist,
-        valid: valid,
-        invalid: invalid,
-        pending: pending,
-        dirty: dirty,
-        untouched: untouched,
+        valid: validDerived,
+        invalid: invalidDerived,
+        pending: pendingDerived,
+        dirty: dirtyDerived,
+        untouched: untouchedDerived,
       };
     }),
   );
 }
-export function allEventsSignal<T>(form: AbstractControl<T>): Signal<{
-  value: T;
-  status: FormControlStatus;
-  touched: boolean;
-  pristine: boolean;
-  valid: boolean;
-  invalid: boolean;
-  pending: boolean;
-  dirty: boolean;
-  untouched: boolean;
-}> {
+export function allEventsSignal<T>(
+  form: AbstractControl<T>,
+): Signal<FormEventData<T>> {
   return toSignal(allEventsObservable(form), {
     initialValue: {
       value: form.value,
