@@ -1,6 +1,6 @@
 # Form Event Signals Article Example Repo
 
-TODO: better spot for link to this Stackblitz example https://stackblitz.com/edit/stackblitz-starters-dzdwbg?file=src%2Fmain.ts
+Stackblitz example with working v16 and v18 examples: https://stackblitz.com/edit/stackblitz-starters-masfsq?file=src%2Fform-events-utils.ts
 
 TODO: Link to article
 
