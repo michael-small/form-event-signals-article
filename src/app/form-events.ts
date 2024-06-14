@@ -15,7 +15,7 @@ import {
   distinctUntilChanged,
   filter,
   map,
-  startWith,
+  startWith, defer,
 } from 'rxjs';
 
 function valueEvents$<T>(form: AbstractControl<T>) {
@@ -91,7 +91,8 @@ type FormEventData<T> = {
 export function allEventsObservable<T>(
   form: AbstractControl<T>,
 ): Observable<FormEventData<T>> {
-  return combineLatest([
+  // https://fullstackbuff.dev/stories/defer-form-value-changes
+  return defer(() => combineLatest([
     valueEvents$(form).pipe(
       startWith(form.value),
       map((value) => (isValueEvent(value) ? value.value : value)),
@@ -134,7 +135,8 @@ export function allEventsObservable<T>(
         untouched: untouchedDerived,
       };
     }),
-  );
+  ))
+
 }
 export function allEventsSignal<T>(
   form: AbstractControl<T>,
