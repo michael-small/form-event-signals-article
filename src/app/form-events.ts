@@ -73,6 +73,10 @@ function isTouchedEvent<T>(
   return event instanceof TouchedChangeEvent;
 }
 
+// Disclaimer: T is most often inferred as Partial<T> in practice due to a limitation of form typing
+// See more, and how in the future this utility could be enhanced further :0
+// https://github.com/ngxtension/ngxtension-platform/pull/391#issuecomment-2163512231
+
 type FormEventData<T> = {
   // These values are possible in Angular 16, see links at the bottom
   value: T;
