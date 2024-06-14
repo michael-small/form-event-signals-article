@@ -3,6 +3,7 @@ import {NonNullableFormBuilder, ReactiveFormsModule, Validators} from "@angular/
 import {AsyncPipe, JsonPipe} from "@angular/common";
 import {$formValueAndStatus, formValueAndStatus$} from "./v16-utils";
 import {allEventsObservable, allEventsSignal} from "./form-events";
+import {map, startWith} from "rxjs";
 
 @Component({
   selector: 'app-root',
@@ -26,6 +27,10 @@ import {allEventsObservable, allEventsSignal} from "./form-events";
       <pre>$form (signal): {{ $form() | json }}</pre>
       <pre>form$ (observable): {{ form$ | async | json }}</pre>
     </div>
+
+    <p>Example of ngOnInit changing the form value is not refected without using defer</p>
+    <pre>valueChanges with no defer: {{nameWithTitleValueChanges$ | async | json}}</pre>
+    <pre>Util with defer: {{nameWithTitleEvent$ | async | json}}</pre>
   `,
   styles: `
     #form-values {
@@ -54,7 +59,19 @@ export class AppComponent {
   // v16 versions - see console
   formValueAndStatus$ = formValueAndStatus$(this.form);
   observableLogging = this.formValueAndStatus$.subscribe((v) => console.log('observable', v));
-
   $formValueAndStatus = $formValueAndStatus(this.form);
   $signalLogging = effect(() => console.log('signal', this.$formValueAndStatus()));
+
+  nameWithTitleValueChanges$= this.form.valueChanges.pipe(
+    startWith(this.form.value),
+    map(value => value.firstName + ', the recipe holder')
+  )
+
+  nameWithTitleEvent$ = allEventsObservable(this.form).pipe(
+    map(value => value.value.firstName + ', the recipe holder'),
+  )
+
+  ngOnInit() {
+    this.form.setValue({firstName: "Michael", lastName: "Small", });
+  }
 }
