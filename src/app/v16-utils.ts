@@ -1,6 +1,6 @@
-import { toSignal } from '@angular/core/rxjs-interop';
-import { AbstractControl } from '@angular/forms';
-import { combineLatest, distinctUntilChanged, map, startWith } from 'rxjs';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {AbstractControl} from '@angular/forms';
+import {combineLatest, defer, distinctUntilChanged, map, startWith} from 'rxjs';
 
 export function formValues$<T>(form: AbstractControl<T>) {
   return form.valueChanges.pipe(
@@ -20,7 +20,7 @@ export function formStatuses$<T>(form: AbstractControl<T>) {
 }
 
 export function formValueAndStatus$<T>(form: AbstractControl<T>) {
-  return combineLatest([formValues$(form), formStatuses$(form)]).pipe(
+  return defer(() => combineLatest([formValues$(form), formStatuses$(form)]).pipe(
     map(([value, status]) => {
       // Bonus! You can choose to include these if you want
       const valid = status === 'VALID';
@@ -34,7 +34,7 @@ export function formValueAndStatus$<T>(form: AbstractControl<T>) {
         pending: pending,
       };
     }),
-  );
+  ))
 }
 
 export function $formValueAndStatus<T>(form: AbstractControl<T>) {
